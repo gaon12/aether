@@ -316,6 +316,14 @@ export default async function AdminHomePage({
                   ? "여러 블록 통합"
                   : "첫 블록만 사용",
             },
+            {
+              label: "개인정보처리방침",
+              value: settings.privacyPolicy ? "설정됨" : "미설정",
+            },
+            {
+              label: "서비스 이용약관",
+              value: settings.termsOfService ? "설정됨" : "미설정",
+            },
           ].map((item) => (
             <div key={item.label} style={metricCardStyle}>
               <span

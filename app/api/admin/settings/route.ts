@@ -49,6 +49,9 @@ export async function POST(request: Request) {
         formData.get("textAggregationMode") === "primary_only"
           ? ("primary_only" as TextAggregationMode)
           : "combined",
+      privacyPolicy: String(formData.get("privacyPolicy") ?? ""),
+      termsOfService: String(formData.get("termsOfService") ?? ""),
+      userDataDeletion: String(formData.get("userDataDeletion") ?? ""),
     });
 
     if (request.headers.get("accept")?.includes("application/json")) {

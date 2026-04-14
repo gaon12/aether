@@ -19,6 +19,9 @@ export interface AppSettings {
   maxSummaryLength: number;
   defaultSummaryLength: number;
   textAggregationMode: TextAggregationMode;
+  privacyPolicy: string;
+  termsOfService: string;
+  userDataDeletion: string;
 }
 
 export interface RuntimeSettings extends AppSettings {
@@ -52,6 +55,9 @@ export interface AppSettingsUpdateInput {
   maxSummaryLength: number;
   defaultSummaryLength: number;
   textAggregationMode: TextAggregationMode;
+  privacyPolicy: string;
+  termsOfService: string;
+  userDataDeletion: string;
 }
 
 export interface RuntimeSettingsUpdateInput extends AppSettingsUpdateInput {
@@ -89,12 +95,48 @@ const SECRET_SETTING_KEYS = new Set<RuntimeSettingKey>([
   "openAiApiKey",
 ]);
 
+export const DEFAULT_PRIVACY_POLICY = `개인정보처리방침
+
+1. 개인정보의 처리 목적
+Aether(이하 '서비스')는 서비스 제공 및 고도화를 위해 최소한의 개인정보를 처리합니다.
+
+2. 수집하는 개인정보의 항목
+서비스는 Threads API를 통해 연동된 계정의 기본 프로필 정보 및 봇과 상호작용한 게시물 데이터를 수집합니다.
+
+3. 개인정보의 보유 및 이용기간
+서비스 제공 목적이 달성된 후 또는 사용자가 데이터 삭제를 요청할 경우 지체 없이 파기합니다.`;
+
+export const DEFAULT_TERMS_OF_SERVICE = `서비스 이용약관
+
+1. 서비스의 목적
+본 서비스는 Threads 플랫폼에서 게시물을 번역하고 요약하는 기능을 제공합니다.
+
+2. 이용자의 의무
+이용자는 본 서비스를 불법적이거나 타인의 권리를 침해하는 용도로 사용해서는 안 됩니다.
+
+3. 책임의 한계
+서비스는 기술적 한계로 인해 번역이나 요약의 정확성을 100% 보장하지 않으며, 이로 인해 발생하는 손해에 대해 책임을 지지 않습니다.`;
+
+export const DEFAULT_USER_DATA_DELETION = `사용자 데이터 삭제 안내
+
+1. 데이터 삭제 요청 방법
+서비스와 연결된 Threads 앱의 설정에서 앱 연동을 해제하거나, 관리자에게 문의하여 데이터 삭제를 요청할 수 있습니다.
+
+2. 삭제되는 데이터
+연동 해제 또는 요청 시, 해당 계정과 연동되어 저장된 모든 프로필 정보 및 캐시 데이터가 즉시 삭제됩니다.
+
+3. 처리 기간
+요청 즉시 또는 영업일 기준 5일 이내에 모든 처리가 완료됩니다.`;
+
 const DEFAULT_SETTINGS: RuntimeSettings = {
   botHandle: null,
   minSourceCharacters: 24,
   maxSummaryLength: 5,
   defaultSummaryLength: 3,
   textAggregationMode: "combined",
+  privacyPolicy: DEFAULT_PRIVACY_POLICY,
+  termsOfService: DEFAULT_TERMS_OF_SERVICE,
+  userDataDeletion: DEFAULT_USER_DATA_DELETION,
   nextPublicAppUrl: null,
   threadsAppId: null,
   threadsAppSecret: null,
@@ -209,6 +251,18 @@ function normalizeSettings(
       { min: 1, max: maxSummaryLength },
     ),
     textAggregationMode: normalizeAggregationMode(input.textAggregationMode),
+    privacyPolicy: normalizeRequiredString(
+      input.privacyPolicy,
+      fallbackSettings.privacyPolicy,
+    ),
+    termsOfService: normalizeRequiredString(
+      input.termsOfService,
+      fallbackSettings.termsOfService,
+    ),
+    userDataDeletion: normalizeRequiredString(
+      input.userDataDeletion,
+      fallbackSettings.userDataDeletion,
+    ),
     nextPublicAppUrl: normalizeOptionalUrl(input.nextPublicAppUrl),
     threadsAppId: normalizeOptionalString(input.threadsAppId),
     threadsAppSecret: normalizeOptionalString(input.threadsAppSecret),
@@ -372,6 +426,18 @@ function buildRuntimeSettingsFromStoredValues(
       "textAggregationMode",
       DEFAULT_SETTINGS.textAggregationMode,
     ),
+    privacyPolicy: getStoredValue(
+      "privacyPolicy",
+      DEFAULT_SETTINGS.privacyPolicy,
+    ),
+    termsOfService: getStoredValue(
+      "termsOfService",
+      DEFAULT_SETTINGS.termsOfService,
+    ),
+    userDataDeletion: getStoredValue(
+      "userDataDeletion",
+      DEFAULT_SETTINGS.userDataDeletion,
+    ),
     nextPublicAppUrl: getStoredValue(
       "nextPublicAppUrl",
       DEFAULT_SETTINGS.nextPublicAppUrl,
@@ -497,6 +563,9 @@ export async function getResolvedAppSettings(): Promise<AppSettings> {
     maxSummaryLength: settings.maxSummaryLength,
     defaultSummaryLength: settings.defaultSummaryLength,
     textAggregationMode: settings.textAggregationMode,
+    privacyPolicy: settings.privacyPolicy,
+    termsOfService: settings.termsOfService,
+    userDataDeletion: settings.userDataDeletion,
   };
 }
 

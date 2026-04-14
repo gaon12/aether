@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 
 type TestTarget = "app_url" | "threads_app" | "threads_webhook" | "model";
 
@@ -100,6 +100,8 @@ interface TestModalProps {
 }
 
 function TestModal({ target, result, loading, onClose }: TestModalProps) {
+  const backdropPressedRef = useRef(false);
+
   // Close on Escape
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -122,10 +124,20 @@ function TestModal({ target, result, loading, onClose }: TestModalProps) {
   return (
     <div
       className="admin-modal-backdrop"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) {
+      onMouseDown={(event) => {
+        backdropPressedRef.current = event.target === event.currentTarget;
+      }}
+      onMouseUp={(event) => {
+        const shouldClose =
+          backdropPressedRef.current && event.target === event.currentTarget;
+        backdropPressedRef.current = false;
+
+        if (shouldClose) {
           onClose();
         }
+      }}
+      onMouseLeave={() => {
+        backdropPressedRef.current = false;
       }}
       aria-hidden
     >

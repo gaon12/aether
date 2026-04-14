@@ -1,8 +1,17 @@
+import { headers } from "next/headers";
 import type { CSSProperties } from "react";
 import { AdminForm } from "@/components/admin/AdminForm";
 import { AdminTabs } from "@/components/admin/AdminTabs";
+import { LegalSettingsFields } from "@/components/admin/LegalSettingsFields";
 import { requireAdminPageAccess } from "@/server/admin/auth";
-import { getResolvedAppSettings } from "@/server/admin/settings";
+import {
+  DEFAULT_PRIVACY_POLICY,
+  DEFAULT_TERMS_OF_SERVICE,
+  DEFAULT_USER_DATA_DELETION,
+  getResolvedAppSettings,
+  getResolvedRuntimeSettings,
+} from "@/server/admin/settings";
+import { resolvePublicAppUrlFromHeaders } from "@/server/http/public-url";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +26,20 @@ export default async function AdminSettingsPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const [session, settings, resolvedSearchParams] = await Promise.all([
-    requireAdminPageAccess(),
-    getResolvedAppSettings(),
-    searchParams,
-  ]);
+  const [session, settings, runtimeSettings, resolvedSearchParams, headersList] =
+    await Promise.all([
+      requireAdminPageAccess(),
+      getResolvedAppSettings(),
+      getResolvedRuntimeSettings(),
+      searchParams,
+      headers(),
+    ]);
+
+  const appUrl =
+    resolvePublicAppUrlFromHeaders(
+      headersList,
+      runtimeSettings.nextPublicAppUrl,
+    ) ?? "";
 
   const saved = readParam(resolvedSearchParams.saved) === "1";
   const errorMessage = readParam(resolvedSearchParams.error);
@@ -172,6 +190,36 @@ export default async function AdminSettingsPage({
           </span>
         </label>
       </div>
+    </section>
+  );
+
+  /* ─── Tab: 개인정보 및 약관 ───────────────────────────────────────── */
+  const legalTab = (
+    <section style={sectionCardStyle}>
+      <div className="admin-section-title">
+        <h2
+          style={{
+            fontSize: "var(--text-lg)",
+            fontWeight: "var(--weight-semibold)",
+          }}
+        >
+          개인정보 및 약관
+        </h2>
+        <p style={{ ...fieldHintStyle, marginTop: "var(--space-1)" }}>
+          Meta 개발자 설정 등에 입력할 개인정보처리방침과 약관 내용을 관리합니다.
+          내용은 아래 URL로 제공됩니다.
+        </p>
+      </div>
+
+      <LegalSettingsFields
+        initialPrivacyPolicy={settings.privacyPolicy}
+        initialTermsOfService={settings.termsOfService}
+        initialUserDataDeletion={settings.userDataDeletion}
+        defaultPrivacyPolicy={DEFAULT_PRIVACY_POLICY}
+        defaultTermsOfService={DEFAULT_TERMS_OF_SERVICE}
+        defaultUserDataDeletion={DEFAULT_USER_DATA_DELETION}
+        appUrl={appUrl}
+      />
     </section>
   );
 
@@ -340,6 +388,32 @@ export default async function AdminSettingsPage({
                 </svg>
               ),
               content: textTab,
+            },
+            {
+              label: "개인정보 / 약관",
+              icon: (
+                <svg
+                  width={14}
+                  height={14}
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  aria-hidden
+                >
+                  <title>개인정보 및 약관</title>
+                  <path
+                    d="M3.5 1.5h7a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1z"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                  />
+                  <path
+                    d="M5.5 4.5h3M5.5 7h3M5.5 9.5h2"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              ),
+              content: legalTab,
             },
           ]}
         />

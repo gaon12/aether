@@ -121,10 +121,6 @@ export async function GET(request: NextRequest) {
       throw new Error("Threads profile response did not include a user id.");
     }
 
-    if (String(user_id) !== profileUserId) {
-      throw new Error("Threads OAuth user id mismatch detected.");
-    }
-
     if (!username) {
       throw new Error("Threads profile response did not include a username.");
     }

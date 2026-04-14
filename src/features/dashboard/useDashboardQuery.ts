@@ -2,8 +2,8 @@
 
 import {
   startTransition,
+  useCallback,
   useEffect,
-  useEffectEvent,
   useRef,
   useState,
 } from "react";
@@ -43,13 +43,17 @@ export function useDashboardQuery<TData>({
   const [loading, setLoading] = useState(enabled);
   const [error, setError] = useState<string | null>(null);
   const activeControllerRef = useRef<AbortController | null>(null);
+  const enabledRef = useRef(enabled);
+  const fetcherRef = useRef(fetcher);
   const initialDataRef = useRef(initialData);
   const mountedRef = useRef(true);
 
+  enabledRef.current = enabled;
+  fetcherRef.current = fetcher;
   initialDataRef.current = initialData;
 
-  const runQuery = useEffectEvent(async (showLoading: boolean) => {
-    if (!enabled) {
+  const runQuery = useCallback(async (showLoading: boolean) => {
+    if (!enabledRef.current) {
       return;
     }
 
@@ -62,7 +66,7 @@ export function useDashboardQuery<TData>({
     }
 
     try {
-      const nextData = await fetcher(controller.signal);
+      const nextData = await fetcherRef.current(controller.signal);
       if (controller.signal.aborted || !mountedRef.current) {
         return;
       }
@@ -86,7 +90,7 @@ export function useDashboardQuery<TData>({
         activeControllerRef.current = null;
       }
     }
-  });
+  }, []);
 
   async function refresh() {
     await runQuery(true);

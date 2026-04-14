@@ -148,6 +148,8 @@ export default async function AdminApiPage({
 
   const webhookUrl = appUrl ? `${appUrl}/api/webhooks/threads` : "";
   const oauthCallbackUrl = appUrl ? `${appUrl}/api/auth/threads/callback` : "";
+  const deauthCallbackUrl = webhookUrl; // Webhook endpoint handles general Meta callbacks
+  const dataDeletionUrl = appUrl ? `${appUrl}/legal/data-deletion` : "";
 
   const oauthUrl =
     settings.threadsAppId && appUrl
@@ -536,13 +538,23 @@ export default async function AdminApiPage({
 
         <div style={gridStyle}>
           <div style={labelStyle}>
+            <span style={fieldLabelStyle}>OAuth Callback URL</span>
+            <CopyField value={oauthCallbackUrl} />
+          </div>
+
+          <div style={labelStyle}>
             <span style={fieldLabelStyle}>Webhook URL</span>
             <CopyField value={webhookUrl} />
           </div>
 
           <div style={labelStyle}>
-            <span style={fieldLabelStyle}>Callback URL</span>
-            <CopyField value={oauthCallbackUrl} />
+            <span style={fieldLabelStyle}>Deauthorization URL</span>
+            <CopyField value={deauthCallbackUrl} />
+          </div>
+
+          <div style={labelStyle}>
+            <span style={fieldLabelStyle}>Data Deletion URL</span>
+            <CopyField value={dataDeletionUrl} />
           </div>
 
           <div style={labelStyle}>

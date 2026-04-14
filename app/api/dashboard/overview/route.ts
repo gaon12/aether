@@ -101,9 +101,7 @@ export async function GET() {
         .executeTakeFirst();
 
       if (threadsAccount) {
-        const token = await getValidAccessToken(
-          threadsAccount.threads_user_id,
-        );
+        const token = await getValidAccessToken(threadsAccount.threads_user_id);
         if (token) {
           const client = new ThreadsClient({
             accessToken: token,

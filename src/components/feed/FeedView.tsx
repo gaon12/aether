@@ -2,8 +2,8 @@
 
 import type { CSSProperties } from "react";
 import { useState } from "react";
-import { useFeed } from "@/features/public/useFeed";
 import type { FeedEntry } from "@/features/public/useFeed";
+import { useFeed } from "@/features/public/useFeed";
 
 const SKELETON_CARD_KEYS = [
   "skeleton-1",
@@ -432,7 +432,13 @@ export function FeedView({ showHero = true }: FeedViewProps) {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-8)" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--space-8)",
+      }}
+    >
       <style>{`
         @keyframes shimmer {
           0% { background-position: -200% 0; }

@@ -32,9 +32,7 @@ type RequestStatusUpdate = Parameters<
 
 type UnknownRecord = Record<string, unknown>;
 
-async function resolveThreadsAccount(
-  targetThreadsUserId?: string | null,
-) {
+async function resolveThreadsAccount(targetThreadsUserId?: string | null) {
   const db = getDb();
   let query = db.selectFrom("threads_accounts").selectAll();
 

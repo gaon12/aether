@@ -37,7 +37,8 @@ export async function POST(request: Request) {
       request,
       "/setup",
       new URLSearchParams({
-        error: "관리자 계정이 이미 생성된 환경에서는 /setup을 다시 사용할 수 없습니다.",
+        error:
+          "관리자 계정이 이미 생성된 환경에서는 /setup을 다시 사용할 수 없습니다.",
       }),
     );
   }

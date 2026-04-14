@@ -112,7 +112,8 @@ export async function GET(request: NextRequest) {
         ? userProfileData.username.trim()
         : null;
     const profileUserId =
-      typeof userProfileData.id === "string" || typeof userProfileData.id === "number"
+      typeof userProfileData.id === "string" ||
+      typeof userProfileData.id === "number"
         ? String(userProfileData.id)
         : null;
 

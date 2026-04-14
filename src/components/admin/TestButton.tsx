@@ -122,7 +122,11 @@ function TestModal({ target, result, loading, onClose }: TestModalProps) {
   return (
     <div
       className="admin-modal-backdrop"
-      onClick={onClose}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
       aria-hidden
     >
       <div
@@ -130,7 +134,6 @@ function TestModal({ target, result, loading, onClose }: TestModalProps) {
         role="dialog"
         aria-modal
         aria-label="테스트 결과"
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Modal header */}
         <div

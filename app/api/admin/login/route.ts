@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
 import {
   attachAdminSessionCookie,
   authenticateAdminUser,
   getAdminAuthConfigurationError,
   hasAdminUser,
 } from "@/server/admin/auth";
+import { buildRedirectResponse } from "@/server/http/redirect";
 
 // 슬라이딩 윈도우 인메모리 Rate Limiter
 // 단일 서버 기준이며, 다중 인스턴스 환경에서는 Redis 등을 사용해야 한다.
@@ -45,49 +45,31 @@ function checkLoginRateLimit(ip: string): {
   return { blocked: false, retryAfterSeconds: 0 };
 }
 
-function buildRedirect(
-  request: Request,
-  path: string,
-  searchParams?: URLSearchParams,
-) {
-  const url = new URL(path, request.url);
-
-  if (searchParams) {
-    url.search = searchParams.toString();
-  }
-
-  return NextResponse.redirect(url, { status: 303 });
-}
-
 export async function POST(request: Request) {
   const clientIp = getClientIp(request);
   const { blocked, retryAfterSeconds } = checkLoginRateLimit(clientIp);
 
   if (blocked) {
-    const response = buildRedirect(
-      request,
-      "/login",
-      new URLSearchParams({
+    const response = buildRedirectResponse(request, "/login", {
+      searchParams: new URLSearchParams({
         error: `로그인 시도가 너무 많습니다. ${retryAfterSeconds}초 후 다시 시도해 주세요.`,
       }),
-    );
+    });
     response.headers.set("Retry-After", String(retryAfterSeconds));
     return response;
   }
 
   const authConfigurationError = getAdminAuthConfigurationError();
   if (authConfigurationError) {
-    return buildRedirect(
-      request,
-      "/login",
-      new URLSearchParams({
+    return buildRedirectResponse(request, "/login", {
+      searchParams: new URLSearchParams({
         error: authConfigurationError,
       }),
-    );
+    });
   }
 
   if (!(await hasAdminUser())) {
-    return buildRedirect(request, "/setup");
+    return buildRedirectResponse(request, "/setup");
   }
 
   const formData = await request.formData();
@@ -98,31 +80,27 @@ export async function POST(request: Request) {
     const adminUser = await authenticateAdminUser({ username, password });
 
     if (!adminUser) {
-      return buildRedirect(
-        request,
-        "/login",
-        new URLSearchParams({
+      return buildRedirectResponse(request, "/login", {
+        searchParams: new URLSearchParams({
           error: "아이디 또는 비밀번호가 올바르지 않습니다.",
         }),
-      );
+      });
     }
 
-    const response = buildRedirect(request, "/admin");
+    const response = buildRedirectResponse(request, "/admin");
     attachAdminSessionCookie(response, {
       adminUserId: adminUser.adminUserId,
     });
 
     return response;
   } catch (error) {
-    return buildRedirect(
-      request,
-      "/login",
-      new URLSearchParams({
+    return buildRedirectResponse(request, "/login", {
+      searchParams: new URLSearchParams({
         error:
           error instanceof Error
             ? error.message
             : "로그인 처리 중 오류가 발생했습니다.",
       }),
-    );
+    });
   }
 }

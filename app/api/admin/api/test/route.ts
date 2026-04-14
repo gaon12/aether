@@ -7,31 +7,17 @@ import {
   type RuntimeSettings,
 } from "@/server/admin/settings";
 import { resolvePublicAppUrlFromRequest } from "@/server/http/public-url";
+import { buildRedirectResponse } from "@/server/http/redirect";
 import { createOpenAIClient } from "@/server/llm/client";
 
 type TestTarget = "app_url" | "threads_app" | "threads_webhook" | "model";
-
-function buildRedirect(
-  request: Request,
-  testTarget: TestTarget,
-  status: "success" | "error",
-  message: string,
-) {
-  const url = new URL("/admin/api", request.url);
-  url.search = new URLSearchParams({
-    testTarget,
-    testStatus: status,
-    testMessage: message,
-  }).toString();
-
-  return NextResponse.redirect(url, { status: 303 });
-}
 
 function buildResponse(
   request: Request,
   testTarget: TestTarget,
   status: "success" | "error",
   message: string,
+  configuredAppUrl?: string | null,
 ) {
   const wantsJson = request.headers.get("accept")?.includes("application/json");
 
@@ -43,7 +29,14 @@ function buildResponse(
     });
   }
 
-  return buildRedirect(request, testTarget, status, message);
+  return buildRedirectResponse(request, "/admin/api", {
+    configuredAppUrl,
+    searchParams: new URLSearchParams({
+      testTarget,
+      testStatus: status,
+      testMessage: message,
+    }),
+  });
 }
 
 async function runAppUrlTest(origin: string) {
@@ -164,15 +157,11 @@ async function runModelTest(settings: RuntimeSettings) {
 
 export async function POST(request: Request) {
   if (!(await hasAdminUser())) {
-    return NextResponse.redirect(new URL("/setup", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/setup");
   }
 
   if (!(await getAdminSessionFromRequest(request))) {
-    return NextResponse.redirect(new URL("/login", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/login");
   }
 
   const formData = await request.formData();
@@ -182,12 +171,13 @@ export async function POST(request: Request) {
     !target ||
     !["app_url", "threads_app", "threads_webhook", "model"].includes(target)
   ) {
-    return buildRedirect(
-      request,
-      "app_url",
-      "error",
-      "알 수 없는 테스트 대상입니다.",
-    );
+    return buildRedirectResponse(request, "/admin/api", {
+      searchParams: new URLSearchParams({
+        testTarget: "app_url",
+        testStatus: "error",
+        testMessage: "알 수 없는 테스트 대상입니다.",
+      }),
+    });
   }
 
   try {
@@ -209,7 +199,13 @@ export async function POST(request: Request) {
             ? await runThreadsWebhookTest(origin, testSettings)
             : await runModelTest(testSettings);
 
-    return buildResponse(request, target, "success", message);
+    return buildResponse(
+      request,
+      target,
+      "success",
+      message,
+      testSettings.nextPublicAppUrl,
+    );
   } catch (error) {
     return buildResponse(
       request,

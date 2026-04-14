@@ -5,28 +5,15 @@ import {
   type TextAggregationMode,
   updateAppSettings,
 } from "@/server/admin/settings";
-
-function buildRedirect(request: Request, searchParams?: URLSearchParams) {
-  const url = new URL("/admin/settings", request.url);
-
-  if (searchParams) {
-    url.search = searchParams.toString();
-  }
-
-  return NextResponse.redirect(url, { status: 303 });
-}
+import { buildRedirectResponse } from "@/server/http/redirect";
 
 export async function GET(request: Request) {
   if (!(await hasAdminUser())) {
-    return NextResponse.redirect(new URL("/setup", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/setup");
   }
 
   if (!(await getAdminSessionFromRequest(request))) {
-    return NextResponse.redirect(new URL("/login", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/login");
   }
 
   return NextResponse.json(await getResolvedAppSettings());
@@ -34,15 +21,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   if (!(await hasAdminUser())) {
-    return NextResponse.redirect(new URL("/setup", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/setup");
   }
 
   if (!(await getAdminSessionFromRequest(request))) {
-    return NextResponse.redirect(new URL("/login", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/login");
   }
 
   const formData = await request.formData();
@@ -71,7 +54,9 @@ export async function POST(request: Request) {
     if (request.headers.get("accept")?.includes("application/json")) {
       return NextResponse.json({ saved: true });
     }
-    return buildRedirect(request, new URLSearchParams({ saved: "1" }));
+    return buildRedirectResponse(request, "/admin/settings", {
+      searchParams: new URLSearchParams({ saved: "1" }),
+    });
   } catch (error) {
     const message =
       error instanceof Error
@@ -80,6 +65,8 @@ export async function POST(request: Request) {
     if (request.headers.get("accept")?.includes("application/json")) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
-    return buildRedirect(request, new URLSearchParams({ error: message }));
+    return buildRedirectResponse(request, "/admin/settings", {
+      searchParams: new URLSearchParams({ error: message }),
+    });
   }
 }

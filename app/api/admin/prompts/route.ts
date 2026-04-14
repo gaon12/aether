@@ -4,6 +4,7 @@ import {
   getResolvedRuntimeSettings,
   updateRuntimeSettings,
 } from "@/server/admin/settings";
+import { buildRedirectResponse } from "@/server/http/redirect";
 import {
   DEFAULT_BASE_SYSTEM_PROMPT,
   DEFAULT_BASE_SYSTEM_PROMPT_NAME,
@@ -12,27 +13,13 @@ import {
   DEFAULT_TRANSLATE_SYSTEM_PROMPT,
 } from "@/server/llm/default-prompts";
 
-function buildRedirect(request: Request, searchParams?: URLSearchParams) {
-  const url = new URL("/admin/prompts", request.url);
-
-  if (searchParams) {
-    url.search = searchParams.toString();
-  }
-
-  return NextResponse.redirect(url, { status: 303 });
-}
-
 export async function GET(request: Request) {
   if (!(await hasAdminUser())) {
-    return NextResponse.redirect(new URL("/setup", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/setup");
   }
 
   if (!(await getAdminSessionFromRequest(request))) {
-    return NextResponse.redirect(new URL("/login", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/login");
   }
 
   const settings = await getResolvedRuntimeSettings();
@@ -48,15 +35,11 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   if (!(await hasAdminUser())) {
-    return NextResponse.redirect(new URL("/setup", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/setup");
   }
 
   if (!(await getAdminSessionFromRequest(request))) {
-    return NextResponse.redirect(new URL("/login", request.url), {
-      status: 303,
-    });
+    return buildRedirectResponse(request, "/login");
   }
 
   const formData = await request.formData();
@@ -122,7 +105,9 @@ export async function POST(request: Request) {
     if (request.headers.get("accept")?.includes("application/json")) {
       return NextResponse.json({ saved: true });
     }
-    return buildRedirect(request, new URLSearchParams({ saved: "1" }));
+    return buildRedirectResponse(request, "/admin/prompts", {
+      searchParams: new URLSearchParams({ saved: "1" }),
+    });
   } catch (error) {
     const message =
       error instanceof Error
@@ -131,6 +116,8 @@ export async function POST(request: Request) {
     if (request.headers.get("accept")?.includes("application/json")) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
-    return buildRedirect(request, new URLSearchParams({ error: message }));
+    return buildRedirectResponse(request, "/admin/prompts", {
+      searchParams: new URLSearchParams({ error: message }),
+    });
   }
 }

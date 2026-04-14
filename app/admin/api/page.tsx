@@ -58,11 +58,8 @@ export default async function AdminApiPage({
 
   const headersList = await headers();
   const appUrl =
-    resolvePublicAppUrlFromHeaders(
-      headersList,
-      settings.nextPublicAppUrl,
-      "http://localhost:3000",
-    ) ?? "http://localhost:3000";
+    resolvePublicAppUrlFromHeaders(headersList, settings.nextPublicAppUrl) ??
+    settings.nextPublicAppUrl;
   const remoteOpenAi = !isLocalBaseUrl(settings.openAiBaseUrl);
   const oauthState = createThreadsOauthState(session.adminUserId);
 
@@ -149,15 +146,16 @@ export default async function AdminApiPage({
 
   /* ─── Tab contents ──────────────────────────────────────────────────── */
 
-  const webhookUrl = `${appUrl}/api/webhooks/threads`;
-  const oauthCallbackUrl = `${appUrl}/api/auth/threads/callback`;
+  const webhookUrl = appUrl ? `${appUrl}/api/webhooks/threads` : "";
+  const oauthCallbackUrl = appUrl ? `${appUrl}/api/auth/threads/callback` : "";
 
-  const oauthUrl = settings.threadsAppId
-    ? `https://threads.net/oauth/authorize?client_id=${settings.threadsAppId}&redirect_uri=${encodeURIComponent(`${appUrl}/api/auth/threads/callback`)}&scope=threads_basic,threads_content_publish,threads_manage_mentions,threads_manage_replies,threads_read_replies&response_type=code&state=${encodeURIComponent(oauthState)}`
-    : null;
+  const oauthUrl =
+    settings.threadsAppId && appUrl
+      ? `https://threads.net/oauth/authorize?client_id=${settings.threadsAppId}&redirect_uri=${encodeURIComponent(`${appUrl}/api/auth/threads/callback`)}&scope=threads_basic,threads_content_publish,threads_manage_mentions,threads_manage_replies,threads_read_replies&response_type=code&state=${encodeURIComponent(oauthState)}`
+      : null;
 
   // Meta OAuth는 HTTPS redirect_uri를 요구합니다
-  const appUrlIsHttp = appUrl.startsWith("http://");
+  const appUrlIsHttp = appUrl?.startsWith("http://") ?? false;
 
   const tokenExpiresAt = threadsAccount?.token_expires_at
     ? new Date(threadsAccount.token_expires_at)

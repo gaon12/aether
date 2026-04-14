@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { ADMIN_SESSION_COOKIE_NAME } from "@/server/admin/constants";
+import { buildAppUrl } from "@/server/http/redirect";
 
 /**
  * 세션 쿠키가 올바른 형식인지 확인한다 (payload.signature 형태).
@@ -23,7 +24,7 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/admin") &&
     !hasValidSessionCookieFormat(sessionCookieValue)
   ) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(buildAppUrl(request, "/login"));
   }
 
   return NextResponse.next();

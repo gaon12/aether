@@ -1,11 +1,10 @@
-import { NextResponse } from "next/server";
 import { clearAdminSessionCookie } from "@/server/admin/auth";
+import { buildRedirectResponse } from "@/server/http/redirect";
 
 export async function POST(request: Request) {
-  const response = NextResponse.redirect(
-    new URL("/login?loggedOut=1", request.url),
-    { status: 303 },
-  );
+  const response = buildRedirectResponse(request, "/login", {
+    searchParams: new URLSearchParams({ loggedOut: "1" }),
+  });
 
   clearAdminSessionCookie(response);
 

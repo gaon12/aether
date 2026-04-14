@@ -215,18 +215,20 @@ function shouldSurfaceReasoningDisableFailure(error: unknown) {
   );
 }
 
-/** Extract and strip <think>/<thinking> blocks. Returns { cleaned, thinking }. */
+const REASONING_TAG_NAMES = ["think", "thinking", "thought", "thoughts"];
+const REASONING_BLOCK_REGEX = new RegExp(
+  `<(${REASONING_TAG_NAMES.join("|")})>([\\s\\S]*?)<\\/\\1>`,
+  "gi",
+);
+
+/** Extract and strip reasoning blocks like <think>, <thinking>, <thought>. */
 export function extractThinkingContent(text: string): {
   cleaned: string;
   thinking: string;
 } {
   const thinkingParts: string[] = [];
   const cleaned = text
-    .replace(/<think>([\s\S]*?)<\/think>/gi, (_, inner: string) => {
-      thinkingParts.push(inner.trim());
-      return "";
-    })
-    .replace(/<thinking>([\s\S]*?)<\/thinking>/gi, (_, inner: string) => {
+    .replace(REASONING_BLOCK_REGEX, (_, _tagName: string, inner: string) => {
       thinkingParts.push(inner.trim());
       return "";
     })
@@ -331,7 +333,7 @@ export async function streamChatCompletion({
   const completedAt = nowIsoString(completedAtMs);
   const durationMs = completedAtMs - startedAtMs;
 
-  // Always extract <think> blocks so they're never posted, regardless of reasoning mode.
+  // Always extract reasoning blocks so they're never posted, regardless of reasoning mode.
   const { cleaned: cleanedText, thinking: thinkingContent } =
     extractThinkingContent(outputText);
 

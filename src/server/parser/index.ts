@@ -7,6 +7,11 @@ import type {
 const DEFAULT_MAX_SUMMARY_LENGTH = 5;
 const LANGUAGE_CODE_PATTERN = /^[a-z]{2,8}(?:-[a-z0-9]{2,8})?$/i;
 const LEADING_MENTION_PATTERN = /^@[\p{L}\p{N}._]+$/u;
+// Threads strips @ from mention text in webhook payloads.
+// A bare handle is distinguished from a command keyword by containing at least
+// one uppercase letter, digit, underscore, or dot (commands are lowercase letters only).
+const BARE_MENTION_PATTERN = /^[\p{L}\p{N}._]+$/u;
+const BARE_MENTION_HAS_NON_LOWERCASE = /[\p{Lu}\p{N}._]/u;
 
 function buildFailure(
   raw: string,
@@ -57,7 +62,14 @@ function stripLeadingMention(
   const normalizedFirstToken = firstToken.toLowerCase();
 
   if (normalizedBotHandle) {
-    if (normalizedFirstToken !== normalizedBotHandle) {
+    // normalizedBotHandle always has @ prefix (guaranteed by normalizeBotHandle).
+    // Threads strips @ from mention text in webhook payloads, so also accept the
+    // bare handle without @.
+    const handleWithoutAt = normalizedBotHandle.slice(1);
+    if (
+      normalizedFirstToken !== normalizedBotHandle &&
+      normalizedFirstToken !== handleWithoutAt
+    ) {
       return {
         remainingTokens: tokens,
         failure: buildFailure(tokens.join(" "), "mention_mismatch"),
@@ -68,6 +80,16 @@ function stripLeadingMention(
   }
 
   if (LEADING_MENTION_PATTERN.test(firstToken)) {
+    return { remainingTokens: restTokens };
+  }
+
+  // Threads strips @ from mention text in webhook payloads. Detect a bare handle
+  // by checking it contains at least one uppercase letter, digit, underscore, or
+  // dot — command keywords ("translate", "summary") are all lowercase letters.
+  if (
+    BARE_MENTION_PATTERN.test(firstToken) &&
+    BARE_MENTION_HAS_NON_LOWERCASE.test(firstToken)
+  ) {
     return { remainingTokens: restTokens };
   }
 

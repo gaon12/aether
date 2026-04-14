@@ -476,7 +476,14 @@ class ThreadsSourceResolver implements WorkerSourceResolver {
       sourceContext = mergeSourceContext(sourceContext, webhookContext);
     }
 
-    if (hasTextCandidate(sourceContext)) {
+    // When this is a reply to another post (reply_to_id is set), the source_media_id
+    // is the command post and the content to translate is in the parent post.
+    // The webhook payload only has the command text, not the parent post content,
+    // so we must always fetch from the API to get parent_post.text.
+    const needsParentContent =
+      !!request.reply_to_id && !getStringValue(sourceContext.parentText);
+
+    if (hasTextCandidate(sourceContext) && !needsParentContent) {
       return sourceContext;
     }
 
